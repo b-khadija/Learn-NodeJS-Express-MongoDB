@@ -1,44 +1,80 @@
 const express = require('express');
-
+const mongoose = require('mongoose');
+const Thing = require('./models/Thing');// Importation du modèle 'Thing' de Mongoose qui représente la collection dans la base de données MongoDB
 const app = express();
 
-/*
-Premier middleware enregiste 'Requête reçu' dans la console et passe l'exécution
-*/
+
+mongoose.connect('mongodb+srv://Emeraude:JWlIEmLYR9eeGRHg@cluster0.so2c01a.mongodb.net/?retryWrites=true&w=majority',
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => console.log('Connected To Database'))
+  .catch(() => console.log('Connected To Database failed'));
+
+//Middleware express qui prend toutes les requêtes qui ont comme Content-Type
+//application/json et met à disposition leur body directement sur l'objet req
+app.use(express.json());
+
+//Premier middleware général et appliquer a toutes les routes et requetes envoyées à notre serveurs 
 app.use((req, res, next) => {
-  console.log('Requête reçu');
-  //Next qui va servir à passer à une prochaine une fonction
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   next();
 });
 
 
+//POST intérecepte les requetes POST
+app.post('/api/stuff', (req, res, next) => {
+  delete req.body._id;
+  const thing = new Thing({
+    ...req.body//Recopie le contenu des objets stuff
+  });
+  thing.save().then()//Enregistre le produit dans la BDD
+    .then(() => res.status(201).json ({ message : 'Objet enregistré' }))
+    .catch(error => res.status(400).json ({ error }));
+});
 
-/*
-Deuxième middleware ajoute le code '201' à la réponse et passe l'exécution
-*/
-app.use((req, res, next) => {
-  res.status(201);
-  next();
-})
-
-
-/*
-Troisième middleware envoie la réponse JSON et passe l'exécution
-*/
-//Méthode use() pour tous types de requêtes, fonction avec req et res
-//Fonction Next va renvoyé à la prochain fonction l'exécution du serveur
-app.use((req, res, next ) => {
-  //Objet res avec la méthode JSON pour renvoyer une response en json
-  res.json({message : 'Votre message à bien été reçue'});
-  next();
+//Modifier et supprimer des données
+app.put('/api/stuff/:id', (req, res, next) => {
+  //Méthode updateOne de Mongoose pour mettre à jour un Thinf dans BDD
+  Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
+    .then(() => res.status(200).json({ message : 'Objet modifié' }))
+    .catch(error => res.status(400).json({ error }));
 });
 
 
-/*
-Dernier middleware enregiste 'Réponse envoyer avec succès' dans la console
-*/
-app.use((req, res) => {
-  console.log('Réponse envoyer avec succès');
-})
+//Supprimer des données
+app.delete('/api/stuff/:id', (req, res, next) => {
+  //Méthode deleteOne() de Mongoose qui servira a supprimer 
+  Thing.deleteOne({ _id: req.params.id })
+    .then(() => res.status(200).json({ message : 'Objet supprimé' }))
+    .catch(error => res.status(400).json({ error }));
+});
+
+
+//Route GET qui permet d'aller chercher un élément avec la méthode findOne() dans notre modèle Thing avec son id 
+//On définit une route HTTP GET pour l'URL '/api/stuff/:id'. 
+//Le :id est un paramètre dynamique dans l'URL
+app.get('/api/stuff/:id', (req, res, next) => {
+  //model mongoose
+  //Recherche d'un document dans la collection 'things'  
+  //dont l'attribut '_id' correspond à la valeur du paramètre 'id' de l'URL
+  Thing.findOne({ _id: req.params.id })
+    //Si un document est trouvé, répond avec un statut HTTP 200 (OK)
+    // et renvoie l'objet 'thing' au format JSON
+    .then(thing => res.status(200).json(thing))
+    .catch(error => res.status(400).json({ error }));
+});
+
+
+//Les routes qui commencent par "/api/stuff".
+//Toutes les requêtes avec une URL qui commence par "/api/stuff" seront acheminées vers ce middleware
+app.get('/api/stuff', (req, res, next) => {
+  Thing.find()
+    .then(things => res.status(200).json(things))
+    .catch(error => res.status(400).json({ error }));
+});
 
 module.exports = app;
