@@ -7,6 +7,7 @@ dotEnv.config();
 
 const mongoUri = process.env.MONGO_URI;
 
+// On se connecte à la base de données
 mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -18,6 +19,7 @@ mongoose.connect(mongoUri, {
 //application/json et met à disposition leur body directement sur l'objet req
 app.use(express.json());
 
+
 //Premier middleware général et appliquer a toutes les routes et requetes envoyées à notre serveurs 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,6 +30,7 @@ app.use((req, res, next) => {
 
 
 //POST intérecepte les requetes POST
+//Enregistre un nouvel objet
 app.post('/api/stuff', (req, res, next) => {
   delete req.body._id;
   const thing = new Thing({
@@ -38,7 +41,7 @@ app.post('/api/stuff', (req, res, next) => {
     .catch(error => res.status(400).json ({ error }));
 });
 
-//Modifier et supprimer des données
+//Modifie un objet existant
 app.put('/api/stuff/:id', (req, res, next) => {
   //Méthode updateOne de Mongoose pour mettre à jour un Thinf dans BDD
   Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
@@ -59,9 +62,10 @@ app.delete('/api/stuff/:id', (req, res, next) => {
 //Route GET qui permet d'aller chercher un élément avec la méthode findOne() dans notre modèle Thing avec son id 
 //On définit une route HTTP GET pour l'URL '/api/stuff/:id'. 
 //Le :id est un paramètre dynamique dans l'URL
+//Récupère un seul objet
 app.get('/api/stuff/:id', (req, res, next) => {
   //model mongoose
-  //Recherche d'un document dans la collection 'things'  
+  //Recherche d'un document dans la collection 'thing'  
   //dont l'attribut '_id' correspond à la valeur du paramètre 'id' de l'URL
   Thing.findOne({ _id: req.params.id })
     //Si un document est trouvé, répond avec un statut HTTP 200 (OK)
@@ -71,8 +75,7 @@ app.get('/api/stuff/:id', (req, res, next) => {
 });
 
 
-//Les routes qui commencent par "/api/stuff".
-//Toutes les requêtes avec une URL qui commence par "/api/stuff" seront acheminées vers ce middleware
+//Récupère tous les objets
 app.get('/api/stuff', (req, res, next) => {
   Thing.find()
     .then(things => res.status(200).json(things))
