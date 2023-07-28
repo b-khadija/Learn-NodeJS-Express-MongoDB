@@ -1,11 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Thing = require('./models/Thing');// Importation du modèle 'Thing' de Mongoose qui représente la collection dans la base de données MongoDB
+const dotEnv = require('dotenv');
 const app = express();
+dotEnv.config();
 
+const mongoUri = process.env.MONGO_URI;
 
-mongoose.connect('mongodb+srv://Emeraude:JWlIEmLYR9eeGRHg@cluster0.so2c01a.mongodb.net/?retryWrites=true&w=majority',
-  {
+mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
