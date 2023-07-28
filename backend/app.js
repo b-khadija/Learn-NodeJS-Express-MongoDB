@@ -4,7 +4,8 @@ const dotEnv = require('dotenv');
 const app = express();
 dotEnv.config();
 const mongoUri = process.env.MONGO_URI;
-const stuffRoutes = require('./routes/stuff')
+const stuffRoutes = require('./routes/stuff');
+userRoutes = require('./routes/user');
 
 // On se connecte à la base de données
 mongoose.connect(mongoUri, {
@@ -28,5 +29,6 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/stuff', stuffRoutes);
+app.use('/api/auth', userRoutes);
 
 module.exports = app;
